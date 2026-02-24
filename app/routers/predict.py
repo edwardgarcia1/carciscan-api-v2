@@ -7,8 +7,7 @@ from app.db.session import get_db
 from app.core.constants import CATEGORY_MAPPING
 from app.services.analyzer import get_practical_advice
 
-from app.services.ocr import extract_text_from_image
-from app.services.parser import parse_ocr_text
+from app.services.llmvl import parse_image_with_vlm
 from app.services.predictor import predict_carcinogenicity, predict_route
 from app.services.smiles import find_chemical_smiles
 from app.services.descriptors import calculate_rdkit_descriptors
@@ -22,29 +21,22 @@ async def predict_from_image(
 ):
     start_time = time.time()
 
-    # 1. OCR
+    # 1. VLM — image sent directly to the LLM (no separate OCR step)
     try:
         image_bytes = await file.read()
-        raw_text = extract_text_from_image(image_bytes)
-        if not raw_text:
-            raise HTTPException(status_code=400, detail="Could not extract text from the image.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error during image processing: {e}")
+        raise HTTPException(status_code=500, detail=f"Error reading uploaded file: {e}")
 
-    print("OCR:", round(time.time() - start_time, 2))
-    print(raw_text)
-
-    # 2. Parsing
-    parsed_text = await parse_ocr_text(raw_text)
+    parsed_text = await parse_image_with_vlm(image_bytes)
     if not parsed_text:
-        raise HTTPException(status_code=400, detail="Could not parse any ingredients from the extracted text.")
+        raise HTTPException(status_code=400, detail="Could not extract ingredients from the image.")
 
-    print("Parsing:", round(time.time() - start_time, 2))
+    print("VLM parsing:", round(time.time() - start_time, 2))
 
     ingredient_list = parsed_text.ingredients
 
     category_str = CATEGORY_MAPPING.get(parsed_text.category_id, "Unknown HUHS Substance")
-    ocr_result = OcrResult(text=raw_text, ingredients=ingredient_list)
+    ocr_result = OcrResult(text=", ".join(ingredient_list), ingredients=ingredient_list)
 
     # 3. Searching
     search_res = find_chemical_smiles(db, ingredient_list)
