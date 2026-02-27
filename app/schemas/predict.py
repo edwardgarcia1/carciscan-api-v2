@@ -34,5 +34,6 @@ class PredictionResponse(BaseModel):
     message: str
     ocr_result: Optional[OcrResult]
     ingredients: List[IngredientDetails]
+    category: str
     processing_time: float
     practical_advice: PracticalAdvice

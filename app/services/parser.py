@@ -10,7 +10,7 @@ LLM_API_KEY = settings.LLM_API_KEY
 MODEL_ID = settings.MODEL_ID
 
 # --- The Optimized System Prompt ---
-SYSTEM_PROMPT = """/no_think You are an expert Chemical Data Analyst specialized in OCR text processing and hazardous material identification. 
+SYSTEM_PROMPT = """You are an expert Chemical Data Analyst specialized in OCR text processing and hazardous material identification. 
 
 I will provide you with raw OCR text from a hazardous product label. Your task is to process this text and return a valid JSON object following the strict schema below.
 

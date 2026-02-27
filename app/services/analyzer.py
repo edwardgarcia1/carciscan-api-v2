@@ -1,6 +1,19 @@
-from typing import List
+from typing import List, Optional
 from app.schemas.predict import IngredientDetails  # Import for type hinting
 from app.core.constants import ROUTE_ADVICE, IARC_EVIDENCE
+
+# Mapping of Category ID (int) to specific safety advice strings
+# Adjust the IDs here to match your actual CATEGORY_MAPPING constants if they differ
+CATEGORY_ADVICE_MAP = {
+    1: "Use in well-ventilated areas. Avoid inhalation of mist or vapor. Keep away from heat or open flames. Follow label instructions during use.",
+    2: "Avoid contact with eyes and prolonged skin exposure. Do not ingest. Use protective gloves when necessary. Store in original container and keep out of reach of children.",
+    3: "Avoid generating or inhaling dust. Use in well-ventilated areas. Prevent contact with eyes and wash hands after handling.",
+    4: "Avoid contact with eyes, mouth, nose, and other sensitive areas. Use as directed and wash hands after handling if not intended for prolonged skin contact.",
+    5: "Handle with care and avoid direct contact. Store in a dry area away from moisture and incompatible materials.",
+    6: "Use only in well-ventilated or outdoor areas. Avoid inhalation of vapors. Keep away from ignition sources.",
+}
+
+DEFAULT_ADVICE = "Handle with caution. Avoid inhalation, ingestion, and direct skin contact. Follow available product instructions and safety guidelines."
 
 
 def _group_priority(group_label: str) -> int:
@@ -76,17 +89,10 @@ def _find_iarc_definition(group_label: str) -> str:
     return None
 
 
-def get_practical_advice(ingredient_results: List[IngredientDetails], category: str) -> dict:
+def get_practical_advice(ingredient_results: List[IngredientDetails], category_id: Optional[int]) -> dict:
     """
-    Returns a structured practical advice dict:
-      {
-        highest_group: Optional[str],
-        confidence: float,  # percent 0..100
-        hazard_level: str,
-        iarc_definition: Optional[str],  # only for highest_group
-        route_advice: List[str],
-        category_advice: str
-      }
+    Returns a structured practical advice dict.
+    Accepts category_id (int) instead of category string.
     """
     # Collect group -> list of confidences
     group_conf_pairs = []
@@ -162,8 +168,8 @@ def get_practical_advice(ingredient_results: List[IngredientDetails], category: 
             seen.add(advice)
             unique_route_advice.append(advice)
 
-    # Generate category-specific advice
-    category_advice = generate_category_advice(category, hazard_level)
+    # Generate category-specific advice using category_id
+    category_advice = generate_category_advice(category_id, hazard_level)
 
     return {
         "highest_group": highest_group_val,
@@ -176,38 +182,20 @@ def get_practical_advice(ingredient_results: List[IngredientDetails], category: 
 
 
 # Helper function for category-specific safety advice
-def generate_category_advice(category: str, hazard_level: str) -> str:
+def generate_category_advice(category_id: Optional[int], hazard_level: str) -> str:
     """
-    Generate category-specific safety advice based on product form and hazard level.
+    Generate category-specific safety advice based on Category ID and hazard level.
     """
-    # Base advice for each category
-    base_advice = {
-        "Aerosol / Spray (Disinfectant, Freshener, Cleaner)":
-            "Use in well-ventilated areas. Avoid direct inhalation. Do not spray near open flames.",
-        "Liquid Solution (Bleach, Detergent, Cleaner, Chemical)":
-            "Wear gloves and eye protection. Avoid skin contact. Store in original container.",
-        "Powder / Granular (Detergent, Cleanser, Chemical)":
-            "Avoid creating dust. Use in well-ventilated areas. Keep away from children.",
-        "Cream / Gel / Paste (Polish, Cleaner, Compound)":
-            "Wear gloves during application. Avoid contact with eyes. Store in cool, dry place.",
-        "Solid / Tablet / Block (Bleach solid, chemical block)":
-            "Handle with dry hands. Dissolve completely before use. Store away from moisture.",
-        "Vapor / Strong Fumes (Solvent, Paint, Thinner, Chemical)":
-            "Use only outdoors or in professionally ventilated areas. Wear respirator.",
-        "Unknown HUHS Substance":
-            "Handle with caution. Follow given instructions, if available."
-    }
-
     # Hazard level modifiers
     hazard_modifiers = {
-        "High": "EXTREME CAUTION REQUIRED. ",
+        "High": "Increased caution recommended. ",
         "Moderate": "Increased caution recommended. ",
         "Low": "Standard precautions sufficient. ",
         "Very Low": "Minimal precautions needed. "
     }
 
-    # Get base advice for category, default to Mixed/Unknown if not found
-    advice = base_advice.get(category, base_advice["Unknown HUHS Substance"])
+    # Get advice by ID, fallback to default if ID is None or not found
+    advice = CATEGORY_ADVICE_MAP.get(category_id, DEFAULT_ADVICE)
 
     # Add hazard level warning prefix
     return hazard_modifiers.get(hazard_level, "") + advice
