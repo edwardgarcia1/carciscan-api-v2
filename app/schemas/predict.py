@@ -6,7 +6,6 @@ class PredictionDetails(BaseModel):
     carcinogenicity_group: Optional[str]
     evidence: Optional[str]
     confidence: Optional[float] = Field(..., ge=0, le=100, description="Confidence percentage from 0 to 100.")
-    route_of_exposure: List[str]
 
 class IngredientDetails(BaseModel):
     name: str
@@ -26,7 +25,6 @@ class PracticalAdvice(BaseModel):
     confidence: float = Field(..., ge=0, le=100, description="Confidence percentage for the highest grouping")
     hazard_level: str
     iarc_definition: Optional[str]
-    route_advice: List[str]
     category_advice: str = Field(..., description="Category-specific safety advice")
 
 class PredictionResponse(BaseModel):

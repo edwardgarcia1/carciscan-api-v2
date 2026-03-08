@@ -1,6 +1,6 @@
 from typing import List, Optional
 from app.schemas.predict import IngredientDetails  # Import for type hinting
-from app.core.constants import ROUTE_ADVICE, IARC_EVIDENCE
+from app.core.constants import IARC_EVIDENCE
 
 # Mapping of Category ID (int) to specific safety advice strings
 # Adjust the IDs here to match your actual CATEGORY_MAPPING constants if they differ
@@ -13,7 +13,7 @@ CATEGORY_ADVICE_MAP = {
     6: "Use only in well-ventilated or outdoor areas. Avoid inhalation of vapors. Keep away from ignition sources.",
 }
 
-DEFAULT_ADVICE = "Handle with caution. Avoid inhalation, ingestion, and direct skin contact. Follow available product instructions and safety guidelines."
+DEFAULT_ADVICE = "Follow available product instructions and safety guidelines."
 
 
 def _group_priority(group_label: str) -> int:
@@ -158,16 +158,6 @@ def get_practical_advice(ingredient_results: List[IngredientDetails], category_i
         hazard_level = _compute_hazard_level(highest_group, max_conf)
         iarc_def = _find_iarc_definition(highest_group)
 
-    # Existing route-based practical advice (preserve ordering and uniqueness)
-    route_advice_list = [ROUTE_ADVICE.get(route, "") for route in all_routes if ROUTE_ADVICE.get(route)]
-    # Ensure unique and stable order: preserve first appearance
-    seen = set()
-    unique_route_advice = []
-    for advice in route_advice_list:
-        if advice not in seen:
-            seen.add(advice)
-            unique_route_advice.append(advice)
-
     # Generate category-specific advice using category_id
     category_advice = generate_category_advice(category_id, hazard_level)
 
@@ -176,7 +166,6 @@ def get_practical_advice(ingredient_results: List[IngredientDetails], category_i
         "confidence": confidence_val,
         "hazard_level": hazard_level,
         "iarc_definition": iarc_def,
-        "route_advice": unique_route_advice,
         "category_advice": category_advice
     }
 

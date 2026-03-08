@@ -1,18 +1,9 @@
 # IARC Carcinogenicity Group Definitions
 IARC_EVIDENCE = {
     "Group 1": "Carcinogenic to humans.",
-    "Group 2A": "Probably carcinogenic to humans.",
-    "Group 2B": "Possibly carcinogenic to humans.",
+    "Group 2": "Probably/Possibly carcinogenic to humans.",
     "Group 3": "Not classifiable as to its carcinogenicity to humans.",
     "Not Found": "Insufficient data to classify carcinogenicity"
-}
-
-# Practical advice based on predicted routes
-ROUTE_ADVICE = {
-    "oral": "Avoid ingestion. Wash hands thoroughly after handling.",
-    "dermal": "Wear protective gloves and clothing to prevent skin contact.",
-    "inhalation": "Use in a well-ventilated area or wear a respiratory mask.",
-    "ocular": "Wear safety goggles or other eye protection."
 }
 
 # Hazard level descriptions

@@ -6,7 +6,6 @@ from app.core.constants import IARC_EVIDENCE
 # --- Global Model Caches ---
 # We load models into memory when the application starts.
 _carcinogenicity_model_data = None
-_route_model_data = None
 
 
 def get_carcinogenicity_model_data():
@@ -14,34 +13,18 @@ def get_carcinogenicity_model_data():
     global _carcinogenicity_model_data
     if _carcinogenicity_model_data is None:
         try:
-            model_path = "app/pickle/carcinogenicity.pkl"
+            # Updated path to the new ordinal model
+            model_path = "app/pickle/final_model.pkl"
             with open(model_path, 'rb') as f:
                 _carcinogenicity_model_data = pickle.load(f)
-            print("✅ Carcinogenicity model and encoder loaded successfully.")
+            print("✅ Final XGBOrdinal model loaded successfully.")
         except FileNotFoundError:
             print(f"❌ Error: Carcinogenicity model file not found at {model_path}")
             _carcinogenicity_model_data = {"error": "Model file not found"}
     return _carcinogenicity_model_data
 
-
-def get_route_model_data():
-    """Loads and caches the route model data."""
-    global _route_model_data
-    if _route_model_data is None:
-        try:
-            model_path = "app/pickle/route.pkl"
-            with open(model_path, 'rb') as f:
-                _route_model_data = pickle.load(f)
-            print("✅ Route model and binarizer loaded successfully.")
-        except FileNotFoundError:
-            print(f"❌ Error: Route model file not found at {model_path}")
-            _route_model_data = {"error": "Model file not found"}
-    return _route_model_data
-
-
 # --- Helper function for preprocessing ---
 def _preprocess_and_align(descriptor_dict: Dict[str, float], feature_names: List[str]) -> Optional[pd.DataFrame]:
-    # ... (This function is perfect as designed above, let's copy it in)
     if not descriptor_dict or not feature_names:
         return None
 
@@ -60,20 +43,46 @@ def predict_carcinogenicity(descriptor_dict: Dict[str, float]) -> dict[str, dict
     model_data = get_carcinogenicity_model_data()
     if "error" in model_data:
         return None
+
+    # Unpack artifact contents
     model = model_data['model']
-    encoder = model_data['label_encoder']
     feature_names = model_data['feature_names']
+    # inv_ordinal_mapping maps integers (0, 1, 2) to labels ('Group 3', 'Group 2', 'Group 1')
+    inv_mapping = model_data['inv_ordinal_mapping']
 
     aligned_df = _preprocess_and_align(descriptor_dict, feature_names)
     if aligned_df is None:
         return None
 
     try:
-        predicted_index = model.predict(aligned_df)[0]
-        probabilities = model.predict_proba(aligned_df)[0]
-        predicted_label = encoder.inverse_transform([predicted_index])[0]
-        confidence_scores = dict(zip(encoder.classes_, probabilities))
+        # 1. Predict returns integers (e.g., 0, 1, 2)
+        predicted_int = model.predict(aligned_df)[0]
+
+        # 2. Convert integer prediction to string label
+        # We cast to int because some ordinal implementations might return floats (e.g., 1.0)
+        predicted_label = inv_mapping.get(int(predicted_int), "Unknown")
+
+        # 3. Handle Confidence Scores
+        confidence_scores = {}
+
+        # Check if model supports predict_proba (Standard XGBOrdinal usually does,
+        # but we check safely).
+        if hasattr(model, "predict_proba"):
+            probabilities = model.predict_proba(aligned_df)[0]
+
+            # We need to map probability columns (0, 1, 2) to labels.
+            # We assume standard ordering where index 0 = Class 0, etc.
+            # We sort keys to ensure alignment: [0, 1, 2] -> ['Group 3', 'Group 2', 'Group 1']
+            sorted_class_indices = sorted(inv_mapping.keys())
+            class_labels = [inv_mapping[i] for i in sorted_class_indices]
+
+            confidence_scores = dict(zip(class_labels, probabilities))
+        else:
+            # Fallback if probabilities aren't available
+            confidence_scores = {predicted_label: 1.0}
+
         evidence = IARC_EVIDENCE.get(predicted_label, "Evidence not available.")
+
         return {
             "prediction": predicted_label,
             "confidence_scores": confidence_scores,
@@ -81,29 +90,4 @@ def predict_carcinogenicity(descriptor_dict: Dict[str, float]) -> dict[str, dict
         }
     except Exception as e:
         print(f"An error occurred during carcinogenicity prediction: {e}")
-        return None
-
-
-# --- UPDATED Route Prediction ---
-def predict_route(descriptor_dict: Dict[str, float]) -> Optional[Dict[str, float]]:
-    model_data = get_route_model_data()
-    if "error" in model_data:
-        return None
-    model = model_data['model']
-    mlb = model_data['multi_label_binarizer']
-    feature_names = model_data['feature_names']
-
-    aligned_df = _preprocess_and_align(descriptor_dict, feature_names)
-    if aligned_df is None:
-        return None
-
-    try:
-        predicted_matrix = model.predict(aligned_df)
-        proba_list = model.predict_proba(aligned_df)
-        positive_probabilities = [p[0][1] for p in proba_list]
-        predicted_routes = mlb.inverse_transform(predicted_matrix)[0]
-        confidence_scores = dict(zip(mlb.classes_, positive_probabilities))
-        return {"prediction": list(predicted_routes), "confidence_scores": confidence_scores}
-    except Exception as e:
-        print(f"An error occurred during route prediction: {e}")
         return None

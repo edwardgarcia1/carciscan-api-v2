@@ -10,7 +10,7 @@ from app.core.constants import CATEGORY_MAPPING
 from app.services.analyzer import get_practical_advice
 
 from app.services.llmvl import parse_image_with_vlm
-from app.services.predictor import predict_carcinogenicity, predict_route
+from app.services.predictor import predict_carcinogenicity
 from app.services.processor import ImageProcessor
 from app.services.smiles import find_chemical_smiles
 from app.services.descriptors import calculate_rdkit_descriptors
@@ -65,9 +65,8 @@ async def _run_prediction_pipeline(
             continue
 
         carc_pred_dict = predict_carcinogenicity(descriptors)
-        route_pred_dict = predict_route(descriptors)
         prediction_details = None
-        if carc_pred_dict and route_pred_dict:
+        if carc_pred_dict:
             predicted_group = carc_pred_dict.get("prediction")
             raw_confidence = carc_pred_dict.get("confidence_scores", {}).get(predicted_group, 0)
 
@@ -85,7 +84,6 @@ async def _run_prediction_pipeline(
                 carcinogenicity_group=predicted_group,
                 evidence=carc_pred_dict.get("evidence"),
                 confidence=conf_pct,
-                route_of_exposure=route_pred_dict.get("prediction", [])
             )
             status = "Success"
         else:
@@ -105,7 +103,6 @@ async def _run_prediction_pipeline(
     # 5. Get practical advice
     # Pass the integer cat_id instead of the string
     practical_advice = get_practical_advice(final_ingredient_details, cat_id)
-    print(practical_advice)
 
     # 6. Calculate processing time and return response
     processing_time = round(time.time() - start_time, 2)
@@ -141,7 +138,7 @@ async def predict_from_image(
             max_dim=1024,
             quality=85
         )
-        print(f"Image preprocessed: {len(raw_bytes)} bytes -> {len(processed_jpeg_bytes)} bytes")
+        print("Image Preprocessed:", round(time.time() - start_time, 2))
     except HTTPException as e:
         # Re-raise processing errors (e.g. corrupt file)
         raise e
@@ -155,7 +152,6 @@ async def predict_from_image(
         raise HTTPException(status_code=400, detail="Could not extract ingredients from the image.")
 
     print("VLM parsing:", round(time.time() - start_time, 2))
-    print("Parsing:", parsed_text)
     print(parsed_text.category_name)
 
     return await _run_prediction_pipeline(

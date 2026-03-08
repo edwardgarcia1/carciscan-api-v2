@@ -5,13 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e3fc1c5-2b7f-48f0-a9e7-e373245dcf82" name="Changes" comment="Start of version 2">
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/services/processor.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/pickle/final_xgbordinal_model.pkl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/core/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/core/constants.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/crud/carciscan.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/crud/carciscan.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/routers/predict.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routers/predict.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/schemas/predict.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/predict.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/services/analyzer.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/analyzer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/services/llmvl.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/llmvl.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/services/parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/parser.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/services/predictor.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/predictor.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -68,6 +69,7 @@
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;/home/dards/PycharmProjects/carciscan-api-v2/app/pickle&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;terminal&quot;,
     &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;
   }
 }</component>
