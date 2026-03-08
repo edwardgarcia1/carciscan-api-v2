@@ -72,7 +72,6 @@ async def parse_image_with_vlm(image_bytes: bytes) -> Optional[ParsedLabelResult
     request_headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {settings.LLM_API_KEY}",
-        "HTTP-Referer": "https://carciscan.edwardgarcia.site",
         "X-Title": "Hazardous Label Analyzer"
     }
 
