@@ -17,7 +17,6 @@ def get_carcinogenicity_model_data():
             model_path = "app/pickle/final_model.pkl"
             with open(model_path, 'rb') as f:
                 _carcinogenicity_model_data = pickle.load(f)
-            print("✅ Final XGBOrdinal model loaded successfully.")
         except FileNotFoundError:
             print(f"❌ Error: Carcinogenicity model file not found at {model_path}")
             _carcinogenicity_model_data = {"error": "Model file not found"}

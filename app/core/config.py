@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     LLM_API_URL: str
     LLM_API_KEY: str
     MODEL_ID: str
+    FALLBACK_MODEL_IDS: str
 
     # API settings
     API_V2_STR: str = "/api/v2"

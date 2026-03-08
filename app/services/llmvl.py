@@ -1,17 +1,14 @@
 import base64
 import httpx
 import json
-from typing import Optional
+from typing import Optional, List
 
 from app.core.config import settings
 from app.services.parser import ParsedLabelResult
 
 # --- Configuration ---
-LLM_API_URL = settings.LLM_API_URL
-LLM_API_KEY = settings.LLM_API_KEY
-MODEL_ID = settings.MODEL_ID
+LLM_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-# Cleaned System Prompt
 VLM_SYSTEM_PROMPT = """/no_think You are an expert hazardous product label analyst.
 
 Your task is to visually read the provided product label image and extract specific information.
@@ -44,90 +41,121 @@ You MUST respond in strict JSON format matching the schema:
 """
 
 
+def _get_model_queue() -> List[str]:
+    """
+    Parses the primary model and fallback models into an ordered list.
+    """
+    # Start with the primary model
+    models = [settings.MODEL_ID]
+
+    # Add fallbacks if defined in settings (comma-separated string)
+    if hasattr(settings, "FALLBACK_MODEL_IDS") and settings.FALLBACK_MODEL_IDS:
+        # Split by comma and strip whitespace
+        fallbacks = [m.strip() for m in settings.FALLBACK_MODEL_IDS.split(",") if m.strip()]
+        models.extend(fallbacks)
+
+    return models
+
+
 async def parse_image_with_vlm(image_bytes: bytes) -> Optional[ParsedLabelResult]:
     """
-    Sends preprocessed JPEG bytes to the VLM and parses the structured response.
+    Sends preprocessed JPEG bytes to OpenRouter with automatic model fallback.
     """
-    # 1. OPTIMIZATION: Hardcode JPEG encoding (Input is guaranteed from ImageProcessor)
+    # 1. Prepare Image Data
     b64_data = base64.standard_b64encode(image_bytes).decode("utf-8")
     image_data_uri = f"data:image/jpeg;base64,{b64_data}"
 
-    # 2. Construct Payload
-    request_payload = {
-        "model": MODEL_ID,
-        "temperature": 0.0,
-        "max_tokens": 1024,
-        "stream": False,
+    # 2. Prepare Model Queue
+    models_to_try = _get_model_queue()
 
-        # Use standard OpenAI response_format for better JSON compliance
-        "response_format": {"type": "json_object"},
+    # 3. Initialize Headers (static for all requests)
+    request_headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {settings.LLM_API_KEY}",
+        "HTTP-Referer": "https://carciscan.edwardgarcia.site",
+        "X-Title": "Hazardous Label Analyzer"
+    }
 
-        "messages": [
-            {
-                "role": "system",
-                "content": VLM_SYSTEM_PROMPT
-            },
-            {
-                "role": "user",
-                "content": [
+    # 4. Iterate through models
+    async with httpx.AsyncClient(timeout=90.0) as client:
+        for model_id in models_to_try:
+            print(f"Attempting model: {model_id}")  # Optional: Logging for debugging
+
+            payload = {
+                "model": model_id,
+                "temperature": 0.0,
+                "max_tokens": 1024,
+                "stream": False,
+                "response_format": {"type": "json_object"},
+                "messages": [
                     {
-                        "type": "image_url",
-                        "image_url": {"url": image_data_uri}
+                        "role": "system",
+                        "content": VLM_SYSTEM_PROMPT
                     },
                     {
-                        "type": "text",
-                        "text": "Analyze this label and extract the data."
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": image_data_uri}
+                            },
+                            {
+                                "type": "text",
+                                "text": "Analyze this label and extract the data."
+                            }
+                        ]
                     }
                 ]
             }
-        ]
-    }
 
-    raw_content = None
-    try:
-        async with httpx.AsyncClient(timeout=90.0) as client:
-            response = await client.post(
-                LLM_API_URL,
-                json=request_payload,
-                headers={
-                    "Content-Type": "application/json",
-                },
-            )
-            response.raise_for_status()
+            raw_content = None
+            try:
+                response = await client.post(
+                    LLM_API_URL,
+                    json=payload,
+                    headers=request_headers,
+                )
 
-            data = response.json()
+                # Handle HTTP errors (e.g., 429 Rate Limit, 500 Server Error)
+                if response.status_code >= 400:
+                    print(f"Model {model_id} failed with status {response.status_code}: {response.text}")
+                    continue  # Try next model
 
-            # --- OpenAI Response Parsing ---
-            choices = data.get("choices", [])
-            if not choices:
-                raise ValueError("LLM response did not contain valid 'choices'")
+                data = response.json()
+                choices = data.get("choices", [])
 
-            message = choices[0].get("message", {})
-            raw_content = message.get("content", "")
+                if not choices:
+                    print(f"Model {model_id} returned no choices.")
+                    continue
 
-            if not raw_content:
-                raise ValueError("LLM response content was empty")
+                message = choices[0].get("message", {})
+                raw_content = message.get("content", "")
 
-            # Strip markdown fences (safety fallback)
-            cleaned_json = raw_content.strip()
-            if cleaned_json.startswith("```json"):
-                cleaned_json = cleaned_json[7:]
-            if cleaned_json.startswith("```"):
-                cleaned_json = cleaned_json[3:]
-            if cleaned_json.endswith("```"):
-                cleaned_json = cleaned_json[:-3]
+                if not raw_content:
+                    print(f"Model {model_id} returned empty content.")
+                    continue
 
-            parsed_data = json.loads(cleaned_json.strip())
+                # Clean potential markdown fences
+                cleaned_json = raw_content.strip()
+                if cleaned_json.startswith("```json"):
+                    cleaned_json = cleaned_json[7:]
+                if cleaned_json.startswith("```"):
+                    cleaned_json = cleaned_json[3:]
+                if cleaned_json.endswith("```"):
+                    cleaned_json = cleaned_json[:-3]
 
-            # Validate via Pydantic model
-            return ParsedLabelResult(**parsed_data)
+                parsed_data = json.loads(cleaned_json.strip())
 
-    except httpx.HTTPStatusError as e:
-        print(f"HTTP Error: {e.response.status_code} - {e.response.text}")
-        return None
-    except json.JSONDecodeError as e:
-        print(f"JSON Decode Error: {e} - Raw response: {raw_content}")
-        return None
-    except Exception as e:
-        print(f"Unexpected Error: {str(e)}")
-        return None
+                # Success! Return and break loop
+                return ParsedLabelResult(**parsed_data)
+
+            except json.JSONDecodeError as e:
+                print(f"JSON Decode Error with model {model_id}: {e}")
+                continue
+            except Exception as e:
+                print(f"Unexpected Error with model {model_id}: {str(e)}")
+                continue
+
+    # If all models fail
+    print("All models failed to process the image.")
+    return None
