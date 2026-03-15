@@ -11,12 +11,19 @@ class Settings(BaseSettings):
     """
     Application settings. This class will load variables from the .env file.
     """
-    # The database connection URL
-    DATABASE_URL: str
     LLM_API_URL: str
     LLM_API_KEY: str
     MODEL_ID: str
     FALLBACK_MODEL_IDS: str
+
+    DATABASE_URL: str
+    DB_HOST: str
+    DB_NAME: str
+    DB_USER: str
+    DB_PASSWORD: str
+    DB_PORT: int
+
+    WORKERS: int
 
     # API settings
     API_V2_STR: str = "/api/v2"
