@@ -4,16 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7e3fc1c5-2b7f-48f0-a9e7-e373245dcf82" name="Changes" comment="added: requirements.txt">
-      <change afterPath="$PROJECT_DIR$/.env.example" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.gitattributes" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/db/compounds.tsv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/db/migration.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/entrypoint.sh" afterDir="false" />
+    <list default="true" id="7e3fc1c5-2b7f-48f0-a9e7-e373245dcf82" name="Changes" comment="added: dockerization">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/core/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/core/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/services/ocr.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -133,7 +127,15 @@
       <option name="project" value="LOCAL" />
       <updated>1772977231660</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="added: dockerization">
+      <option name="closed" value="true" />
+      <created>1773587897525</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1773587897525</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -141,6 +143,7 @@
     <MESSAGE value="update: retrained model and remove routes" />
     <MESSAGE value="removed: jan dependency" />
     <MESSAGE value="removed: http referer" />
-    <option name="LAST_COMMIT_MESSAGE" value="removed: http referer" />
+    <MESSAGE value="added: dockerization" />
+    <option name="LAST_COMMIT_MESSAGE" value="added: dockerization" />
   </component>
 </project>
