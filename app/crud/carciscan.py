@@ -10,7 +10,7 @@ def search_chemicals(db: Session, search_terms: List[str]) -> List[Dict[str, Any
 
     # 1. Set the similarity threshold for this transaction
     # We use text() to execute raw SQL
-    db.execute(text("SET pg_trgm.similarity_threshold = 0.80"))
+    db.execute(text("SET pg_trgm.similarity_threshold = 0.60"))
 
     # 2. Define the main query
     # We use :terms as the bind parameter for the list

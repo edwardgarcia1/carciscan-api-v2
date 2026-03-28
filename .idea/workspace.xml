@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7e3fc1c5-2b7f-48f0-a9e7-e373245dcf82" name="Changes" comment="added: dockerization">
+    <list default="true" id="7e3fc1c5-2b7f-48f0-a9e7-e373245dcf82" name="Changes" comment="update: optimize docker">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/services/ocr.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/crud/carciscan.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/crud/carciscan.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -135,7 +134,15 @@
       <option name="project" value="LOCAL" />
       <updated>1773587897525</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="update: optimize docker">
+      <option name="closed" value="true" />
+      <created>1773589977506</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1773589977506</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -144,6 +151,7 @@
     <MESSAGE value="removed: jan dependency" />
     <MESSAGE value="removed: http referer" />
     <MESSAGE value="added: dockerization" />
-    <option name="LAST_COMMIT_MESSAGE" value="added: dockerization" />
+    <MESSAGE value="update: optimize docker" />
+    <option name="LAST_COMMIT_MESSAGE" value="update: optimize docker" />
   </component>
 </project>
