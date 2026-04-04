@@ -76,7 +76,7 @@ async def parse_image_with_vlm(image_bytes: bytes) -> Optional[ParsedLabelResult
     }
 
     # 4. Iterate through models
-    async with httpx.AsyncClient(timeout=90.0) as client:
+    async with httpx.AsyncClient(timeout=60.0) as client:
         for model_id in models_to_try:
             print(f"Attempting model: {model_id}")  # Optional: Logging for debugging
 

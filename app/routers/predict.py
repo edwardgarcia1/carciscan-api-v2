@@ -1,3 +1,4 @@
+import asyncio
 import time
 from typing import List, Optional
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, Body
@@ -44,27 +45,26 @@ async def _run_prediction_pipeline(
     # Construct OCR result equivalent
     ocr_result = OcrResult(text=", ".join(ingredient_list), ingredients=ingredient_list)
 
-    # 3. Searching
-    search_res = find_chemical_smiles(db, ingredient_list)
+    # 3. Searching - run in thread pool to avoid blocking event loop
+    search_res = await asyncio.to_thread(find_chemical_smiles, db, ingredient_list)
     print("Searching:", round(time.time() - start_time, 2))
 
-    # 4. Prediction
-    final_ingredient_details = []
-    for res in search_res:
-        descriptors = calculate_rdkit_descriptors(res["smiles"])
+    # 4. Prediction - process each ingredient concurrently using asyncio.gather
+    async def _process_single_ingredient(res: dict) -> IngredientDetails:
+        """Process a single ingredient: calculate descriptors and predict carcinogenicity."""
+        # Run CPU-bound RDKit calculations in thread pool
+        descriptors = await asyncio.to_thread(calculate_rdkit_descriptors, res["smiles"])
         if not descriptors:
-            final_ingredient_details.append(
-                IngredientDetails(
-                    name=res['searched_term'],
-                    prediction_details=None,
-                    matched_name=res['name'],
-                    pubchem_url=f"https://pubchem.ncbi.nlm.nih.gov/compound/{res['cid']}",
-                    status="Could not calculate molecular descriptors"
-                )
+            return IngredientDetails(
+                name=res['searched_term'],
+                prediction_details=None,
+                matched_name=res['name'],
+                pubchem_url=f"https://pubchem.ncbi.nlm.nih.gov/compound/{res['cid']}",
+                status="Could not calculate molecular descriptors"
             )
-            continue
 
-        carc_pred_dict = predict_carcinogenicity(descriptors)
+        # Run CPU-bound prediction in thread pool
+        carc_pred_dict = await asyncio.to_thread(predict_carcinogenicity, descriptors)
         prediction_details = None
         if carc_pred_dict:
             predicted_group = carc_pred_dict.get("prediction")
@@ -89,15 +89,18 @@ async def _run_prediction_pipeline(
         else:
             status = "Prediction model failed"
 
-        final_ingredient_details.append(
-            IngredientDetails(
-                name=res['searched_term'],
-                prediction_details=prediction_details,
-                matched_name=res['name'],
-                pubchem_url=f"https://pubchem.ncbi.nlm.nih.gov/compound/{res['cid']}",
-                status=status
-            )
+        return IngredientDetails(
+            name=res['searched_term'],
+            prediction_details=prediction_details,
+            matched_name=res['name'],
+            pubchem_url=f"https://pubchem.ncbi.nlm.nih.gov/compound/{res['cid']}",
+            status=status
         )
+
+    # Process all ingredients concurrently
+    final_ingredient_details = await asyncio.gather(
+        *[_process_single_ingredient(res) for res in search_res]
+    )
     print("Predictions:", round(time.time() - start_time, 2))
 
     # 5. Get practical advice
