@@ -87,3 +87,6 @@ typing-inspection==0.4.2
     #   fastapi
     #   pydantic
     #   pydantic-settings
+uvicorn==0.43.0
+python-multipart==0.0.22
+xgbordinal==1.0.1
